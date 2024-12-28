@@ -58,7 +58,9 @@ bool ShaderManager::CompileShaderFromFile(const int& program, uint32_t& shaderID
         sourceCode += "\n";
     }
 
+#ifdef _DEBUG
     std::cout << sourceCode << std::endl;
+#endif
 
     shaderStream.close();
 
@@ -73,7 +75,7 @@ void ShaderManager::DeleteShader(const int& shaderID)
 void ShaderManager::LinkValidateProgram(const int& program)
 {
     GLCall(glLinkProgram(program));
-    //GLCall(glValidateProgram(program));
+    GLCall(glValidateProgram(program));
 }
 
 void ShaderManager::UseProgram(const int program)
