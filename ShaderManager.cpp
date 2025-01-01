@@ -8,10 +8,10 @@ int ShaderManager::CreateProgram()
 	return glCreateProgram();
 }
 
-bool ShaderManager::CompileShaderFromSource(const int& program, uint32_t& shaderID, const std::string& source, uint32_t type)
+bool ShaderManager::CompileShaderFromSource(const int& program, const std::string& source, uint32_t type)
 {
     int status;
-    shaderID = glCreateShader(type);
+    uint32_t shaderID = glCreateShader(type);
     const char* src = source.c_str();
 
     GLCall(glShaderSource(shaderID, 1, &src, NULL));
@@ -38,11 +38,12 @@ bool ShaderManager::CompileShaderFromSource(const int& program, uint32_t& shader
     }
 
     GLCall(glAttachShader(program, shaderID));
+    GLCall(glDeleteShader(shaderID));
 
     return true;
 }
 
-bool ShaderManager::CompileShaderFromFile(const int& program, uint32_t& shaderID, const std::string& filename, uint32_t type)
+bool ShaderManager::CompileShaderFromFile(const int& program, const std::string& filename, uint32_t type)
 {
 	char buf[512];
 
@@ -64,12 +65,7 @@ bool ShaderManager::CompileShaderFromFile(const int& program, uint32_t& shaderID
 
     shaderStream.close();
 
-    return CompileShaderFromSource(program, shaderID, sourceCode, type);
-}
-
-void ShaderManager::DeleteShader(const int& shaderID)
-{
-    GLCall(glDeleteShader(shaderID));
+    return CompileShaderFromSource(program, sourceCode, type);
 }
 
 void ShaderManager::LinkValidateProgram(const int& program)
@@ -83,7 +79,9 @@ void ShaderManager::UseProgram(const int program)
     GLCall(glUseProgram(program));
 }
 
-void ShaderManager::DeleteProgram(const int& program)
+void ShaderManager::DeleteProgram(int& program)
 {
     GLCall(glDeleteProgram(program));
+
+    program = 0;
 }

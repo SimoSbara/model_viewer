@@ -5,17 +5,17 @@
 class IndexBuffer
 {
 public:
-	IndexBuffer(const uint32_t* data, uint32_t count);
+	IndexBuffer(const uint32_t* data, uint32_t size);
 	~IndexBuffer();
+
+	inline uint32_t GetElementsCount() const
+	{
+		return this->count;
+	}
 
 	void Bind() const;
 	void UnBind() const;
 	void Delete() const;
-
-	inline uint32_t GetCount() const
-	{
-		return this->count;
-	}
 
 private:
 	uint32_t rendererID;

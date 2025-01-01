@@ -6,6 +6,8 @@
 #include "VAO.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
+#include "Texture.h"
+#include "Model.h"
 
 class GLFWwindow;
 
@@ -41,6 +43,8 @@ private:
     bool InitResources();
     bool FreeResources();
 
+    void Projection(const float rotation, const int &shader);
+
 private:
     static Renderer* renderer;
 
@@ -51,11 +55,10 @@ private:
 
     //risorse opengl
     GLFWwindow* window;
-    int shaderProgram;
-    int scaleUniformLoc;
+    int shaderTexture;
+    int shaderColor;
 
-    std::unique_ptr<VertexBuffer> vbo;
-    std::unique_ptr<IndexBuffer> ebo;
-    std::unique_ptr<VAO> vao;
+    Texture texture;
+    Model model;
 };
 

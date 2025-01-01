@@ -3,14 +3,50 @@
 #include "ShaderManager.h"
 
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
+#include "imgui/imconfig.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
+
+
+//QUADRATO
 //XYZ RGB
-static float positions[] =
+//static float positions[] =
+//{
+//    -0.5f,  0.5f, 0.5f, 0.f, 1.f, 0.f, //0
+//    -0.5f, -0.5f, 0.5f, 1.f, 0.f, 0.f, //1
+//     0.5f, -0.5f, 0.5f, 0.f, 0.f, 1.f, //2
+//     0.5f,  0.5f, 0.5f, 1.f, 1.f, 0.f  //3
+//};
+
+
+// 0--------3
+// |        |
+// |        |
+// 1--------2
+
+//static uint32_t indeces[] =
+//{
+//    0, 1, 3,
+//    1, 2, 3
+//};
+
+//CUBO
+//XYZ RGB UV 8 vertici
+static float vertices[] =
 {
-    -0.5f,  0.5f, 1.f, 0.f, 1.f, 0.f, //0
-    -0.5f, -0.5f, 1.f, 1.f, 0.f, 0.f, //1
-     0.5f, -0.5f, 1.f, 0.f, 0.f, 1.f, //2
-     0.5f,  0.5f, 1.f, 1.f, 1.f, 0.f  //3
+     0.5f,  0.0f, 0.0f, 0.f, 1.f, 0.f, 1.0f, 0.0f, //0
+     0.0f,  0.0f, 0.0f, 1.f, 0.f, 0.f, 0.0f, 0.0f, //1
+     0.0f,  0.0f, 0.5f, 0.f, 0.f, 1.f, 0.0f, 1.0f, //2
+     0.5f,  0.0f, 0.5f, 1.f, 1.f, 0.f, 1.0f, 1.0f, //3
+
+     0.5f,  0.5f, 0.0f, 0.f, 1.f, 0.f, 1.0f, 1.0f, //4
+     0.0f,  0.5f, 0.0f, 1.f, 0.f, 0.f, 0.0f, 1.0f, //5
+     0.0f,  0.5f, 0.5f, 0.f, 0.f, 1.f, 0.0f, 1.0f, //6
+     0.5f,  0.5f, 0.5f, 1.f, 1.f, 0.f, 1.0f, 1.0f  //7
 };
 
 
@@ -21,18 +57,32 @@ static float positions[] =
 
 static uint32_t indeces[] =
 {
-    0, 1, 3,
-    1, 2, 3
+    //BOTTOM
+    0, 3, 2,
+    0, 2, 1,
+    //NORD
+    2, 3, 7,
+    2, 7, 6,
+    //OVEST
+    1, 2, 6,
+    1, 6, 5,
+    //EST
+    0, 3, 7,
+    0, 7, 4,
+    //SUD
+    1, 0, 4,
+    1, 4, 5,
+    //TOP
+    5, 4, 6,
+    4, 7, 6
 };
 
 Renderer* Renderer::renderer = nullptr;
 
 Renderer::Renderer()
 {
-    this->width = 640;
-    this->height = 480;
-    this->shaderProgram = 0;
-    this->scaleUniformLoc = 0;
+    this->width = 1000;
+    this->height = 800;
     this->window = nullptr;
     this->isRunning = false;
 }
@@ -64,8 +114,8 @@ bool Renderer::InitOpenGL()
     if (!glfwInit())
         return false;
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     window = glfwCreateWindow(width, height, "Model Viewer", NULL, NULL);
@@ -101,55 +151,81 @@ bool Renderer::FreeOpenGL()
 
 bool Renderer::InitResources()
 {
-    uint32_t vs, ps;
+    shaderTexture = ShaderManager::CreateProgram();
+    shaderColor = ShaderManager::CreateProgram();
 
-    shaderProgram = ShaderManager::CreateProgram();
-
-    if (!ShaderManager::CompileShaderFromFile(shaderProgram, vs, "shaders/VertexShader.glsl", GL_VERTEX_SHADER))
+    if (!ShaderManager::CompileShaderFromFile(shaderTexture, "shaders/texture/VertexShader.glsl", GL_VERTEX_SHADER))
         return false;
 
-    if (!ShaderManager::CompileShaderFromFile(shaderProgram, ps, "shaders/PixelShader.glsl", GL_FRAGMENT_SHADER))
+    if (!ShaderManager::CompileShaderFromFile(shaderTexture, "shaders/texture/PixelShader.glsl", GL_FRAGMENT_SHADER))
         return false;
 
-    ShaderManager::LinkValidateProgram(shaderProgram);
-    ShaderManager::DeleteShader(vs);
-    ShaderManager::DeleteShader(ps);
+    ShaderManager::LinkValidateProgram(shaderTexture);
+    ShaderManager::UseProgram(0);
 
-    ShaderManager::UseProgram(shaderProgram);
+    if (!ShaderManager::CompileShaderFromFile(shaderColor, "shaders/color/VertexShader.glsl", GL_VERTEX_SHADER))
+        return false;
 
-    vbo.reset(new VertexBuffer(positions, sizeof(positions)));
-    ebo.reset(new IndexBuffer(indeces, 6));
-    vao.reset(new VAO);
+    if (!ShaderManager::CompileShaderFromFile(shaderColor, "shaders/color/PixelShader.glsl", GL_FRAGMENT_SHADER))
+        return false;
 
-    vao->Bind();
+    ShaderManager::LinkValidateProgram(shaderColor);
+    ShaderManager::UseProgram(0);
 
-    vao->LinkVertexBuffer(*vbo, 0, GL_FLOAT, 3, 6 * sizeof(float), 0);
-    vao->LinkVertexBuffer(*vbo, 1, GL_FLOAT, 3, 6 * sizeof(float), 3 * sizeof(float));
+    //setto le location delle variabili per lo shader per rendering di texture
+    ShaderManager::UseProgram(shaderTexture);
 
-    vao->UnBind();
-    vbo->UnBind();
-    ebo->UnBind();
-
-    scaleUniformLoc = glGetUniformLocation(shaderProgram, "scale");
-
-    GLCall(glUniform1f(scaleUniformLoc, 1.0f));
+    GLCall(glUniform1f(glGetUniformLocation(shaderTexture, "scale"), 1.0f));
+    GLCall(glUniform1i(glGetUniformLocation(shaderTexture, "tex0"), 0));
 
     ShaderManager::UseProgram(0);
+
+    //setto le location delle variabili per lo shader per rendering colorato
+    ShaderManager::UseProgram(shaderColor);
+
+    GLCall(glUniform1f(glGetUniformLocation(shaderColor, "scale"), 1.0f));
+    GLCall(glUniform3f(glGetUniformLocation(shaderColor, "color"), 1.0f, 1.0f, 0.0f));
+
+    ShaderManager::UseProgram(0);
+
+    //carico assets
+    texture.CreateFromFile("samp.png");
+    model.CreateFromOBJ("models/perno_samp.obj");
 
     return true;
 }
 
 bool Renderer::FreeResources()
 {
-    vbo.reset();
-    ebo.reset();
-    vao.reset();
+    model.Delete();
+    texture.Delete();
 
-    ShaderManager::DeleteProgram(shaderProgram);
-
-    shaderProgram = 0;
+    ShaderManager::DeleteProgram(shaderTexture);
+    ShaderManager::DeleteProgram(shaderColor);
 
     return true;
+}
+
+void Renderer::Projection(const float rotation, const int& shader)
+{
+    glm::mat4 model(1.0f);
+    glm::mat4 view(1.0f);
+    glm::mat4 proj(1.0f);
+
+    //model = glm::rotate(model, glm::radians(rotation), glm::vec3(1.0f, 0.5f, 0.2f));
+    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -10.0f));
+    proj = glm::perspective(glm::radians(45.0f),
+        (float)width / (float)height,
+        0.1f, 100.f);
+
+    int modelLoc = glGetUniformLocation(shader, "model");
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+    int viewLoc = glGetUniformLocation(shader, "view");
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+
+    int projLoc = glGetUniformLocation(shader, "proj");
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
 }
 
 void Renderer::RenderThread(Renderer* r)
@@ -166,46 +242,119 @@ void Renderer::RenderThread(Renderer* r)
     }
 
     GLFWwindow* window = renderer.window;
-    int& shader = renderer.shaderProgram;
-    int& location = renderer.scaleUniformLoc;
+    int& shaderTexture = renderer.shaderTexture;
+    int& shaderColor = renderer.shaderColor;
 
-    VAO* vao = renderer.vao.get();
-    VertexBuffer* vbo = renderer.vbo.get();
-    IndexBuffer* ebo = renderer.ebo.get();
+    Model& mdl = renderer.model;
+    Texture& texture = renderer.texture;
 
+    int shader;
     bool alternate = false;
+    bool colorAlternate = false;
     float scale = 1.0f;
+    float rotation = 0.0f;
+    float red = 0.0f;
+    bool useTexture = true;
 
-    if (!vao || !ebo || !window)
+    bool isTPressed = false;
+
+    double lastTime = glfwGetTime();
+    int frames = 0;
+    
+    if (!window)
     {
         renderer.isRunning = false;
         return;
     }
 
+    GLCall(glEnable(GL_DEPTH_TEST));
+
     while (renderer.isRunning && !glfwWindowShouldClose(window))
     {
-        //clear screen
-        glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        double currentTime = glfwGetTime();
+        double diff = currentTime - lastTime;
+        
+        if (diff >= 1.0f)
+        {
+            double frameTime = (diff * 1000.0) / double(frames);
 
+            system("cls");
+            printf("%f fps\n", (double)frames / diff);
+            printf("%f ms/frame\n", frameTime);
+            printf("useTexture %d\n", useTexture);
+            frames = 0;
+            lastTime += diff;
+        }
+
+        frames++;
+
+        if (glfwGetKey(window, GLFW_KEY_T) == GLFW_RELEASE && isTPressed)
+        {
+            isTPressed = false;
+        }
+        else if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS && !isTPressed)
+        {
+            printf("glfwGetKey T\n");
+            useTexture = !useTexture;
+
+            isTPressed = true;
+        }
+
+        shader = (useTexture) ? shaderTexture : shaderColor;
         ShaderManager::UseProgram(shader);
 
-        vao->Bind();
-        ebo->Bind();
+        //clear screen
+        GLCall(glClearColor(0.07f, 0.13f, 0.17f, 1.0f));
+        GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+        
+        renderer.Projection(rotation, shader);
 
         if (alternate)
-            scale += 0.001f;
+            scale += 0.005f;
         else
-            scale -= 0.001f;
+            scale -= 0.005f;
 
         if (scale >= 1.f)
             alternate = false;
-        else if (scale <= 0.1f)
+        else if (scale <= 0.05f)
             alternate = true;
 
-        glUniform1f(location, scale);
+        rotation += 0.5f;
 
-        glDrawElements(GL_TRIANGLES, sizeof(indeces) / sizeof(uint32_t), GL_UNSIGNED_INT, 0);
+        //glUniform1f(glGetUniformLocation(shader, "scale"), scale);
+
+        mdl.Bind();
+
+        if(useTexture)
+            texture.Bind();
+        else
+        {
+
+            if (colorAlternate)
+                red += 0.015f;
+            else
+                red -= 0.015f;
+
+            if (red >= 1.f)
+                colorAlternate = false;
+            else if (red <= 0.f)
+                colorAlternate = true;
+
+            float r = (float)(rand() % 256) / 255.0f;
+            float g = (float)(rand() % 256) / 255.0f;
+            float b = (float)(rand() % 256) / 255.0f;
+
+            GLCall(glUniform3f(glGetUniformLocation(shader, "color"), 1.0f, 0.0f, 0.0f));
+        }
+
+        glDrawElements(GL_TRIANGLES, mdl.GetElementsCount(), GL_UNSIGNED_INT, 0);
+
+        if (useTexture)
+            texture.UnBind();
+
+        mdl.UnBind();
+
+        ShaderManager::UseProgram(0);
 
         glfwSwapBuffers(window);
 
