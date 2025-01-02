@@ -2,14 +2,12 @@
 
 #include <memory>
 
+#include "OGLUtils.hpp"
+
+#include "VAO.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
-#include "VAO.h"
-
-struct Indices
-{
-	uint32_t i1, i2, i3;
-};
+#include "Texture.h"
 
 struct VertexData
 {
@@ -27,17 +25,31 @@ public:
 	~Model();
 
 	bool CreateFromOBJ(const char* filename);
-	bool CreateFromData(const float* vertexBuffer, const uint32_t vertexBufferSize, const uint32_t* indices, const uint32_t indicesSize);
+	bool LoadTexture(const char* filename);
 
-	uint32_t GetElementsCount() const;
+	void UpdatePosition(const glm::vec3 position);
+	void UpdatePositionRotation(const glm::vec3 position, const float angle);
 
-	void Bind() const;
-	void UnBind() const;
+	inline uint32_t GetElementsCount() const
+	{
+		if (!ebo)
+			return 0;
+
+		return this->ebo->GetElementsCount();
+	}
+
+	void Draw(const bool &useTexture) const;
+	void SetModelMatrix(const int &shader) const;
+	
 	void Delete();
 
 private:
 	std::unique_ptr<VertexBuffer> vbo;
 	std::unique_ptr<IndexBuffer> ebo;
 	std::unique_ptr<VAO> vao;
+	std::unique_ptr<Texture> texture;
+
+	glm::vec3 position;
+	glm::mat4 model;
 };
 

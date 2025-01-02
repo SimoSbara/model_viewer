@@ -2,12 +2,10 @@
 
 #include <thread>
 #include <memory>
+#include <unordered_map>
 
-#include "VAO.h"
-#include "VertexBuffer.h"
-#include "IndexBuffer.h"
-#include "Texture.h"
 #include "Model.h"
+#include "Camera.h"
 
 class GLFWwindow;
 
@@ -43,7 +41,7 @@ private:
     bool InitResources();
     bool FreeResources();
 
-    void Projection(const float rotation, const int &shader);
+    void CheckInputs(Camera& camera, bool& useTexture, float& scale, float& rotation);
 
 private:
     static Renderer* renderer;
@@ -58,7 +56,9 @@ private:
     int shaderTexture;
     int shaderColor;
 
-    Texture texture;
     Model model;
+    Model light;
+
+    std::unordered_map<int, bool> keys;
 };
 

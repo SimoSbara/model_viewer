@@ -29,7 +29,7 @@ bool ShaderManager::CompileShaderFromSource(const int& program, const std::strin
 
         GLCall(glGetShaderInfoLog(shaderID, length, &length, message));
 
-        std::cout << "error compile shader " << message << std::endl;
+        std::cout << "error compile shader " << ((type == GL_VERTEX_SHADER) ? "Vertex Shader " : "Fragment Shader ") << message << std::endl;
         std::cout << "shader " << source << std::endl;
 
         delete[] message;

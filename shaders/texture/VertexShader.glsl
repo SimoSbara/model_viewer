@@ -2,17 +2,23 @@
 
 layout (location = 0) in vec3 vPos;
 layout (location = 2) in vec2 vUV;
+layout (location = 3) in vec3 vNorm;
 
+out vec3 normal;
+out vec3 curPos;
 out vec2 texCoord;
 
 uniform float scale;
-
+uniform mat4 camMatrix;
 uniform mat4 model;
-uniform mat4 proj;
-uniform mat4 view;
 
 void main()
 {
-	gl_Position = proj * view * model * vec4(vPos.x * scale, vPos.y * scale, vPos.z * scale, 1.0);
+	vec3 finalPos = vec3(vPos.x * scale, vPos.y * scale, vPos.z * scale);
+	curPos = vec3(model * vec4(finalPos, 1.0f));
+
+	gl_Position = camMatrix * vec4(curPos, 1.0);
+
 	texCoord = vUV;
+	normal = vNorm;
 }

@@ -2,11 +2,6 @@
 #include "OGLUtils.hpp"
 #include "ShaderManager.h"
 
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
 #include "imgui/imconfig.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
@@ -189,8 +184,8 @@ bool Renderer::InitResources()
     ShaderManager::UseProgram(0);
 
     //carico assets
-    texture.CreateFromFile("samp.png");
-    model.CreateFromOBJ("models/perno_samp.obj");
+    model.CreateFromOBJ("models/perno_samp3.obj");
+    model.LoadTexture("samp.png");
 
     return true;
 }
@@ -198,7 +193,6 @@ bool Renderer::InitResources()
 bool Renderer::FreeResources()
 {
     model.Delete();
-    texture.Delete();
 
     ShaderManager::DeleteProgram(shaderTexture);
     ShaderManager::DeleteProgram(shaderColor);
@@ -206,26 +200,40 @@ bool Renderer::FreeResources()
     return true;
 }
 
-void Renderer::Projection(const float rotation, const int& shader)
+void Renderer::CheckInputs(Camera& camera, bool& useTexture, float& scale, float& rotation)
 {
-    glm::mat4 model(1.0f);
-    glm::mat4 view(1.0f);
-    glm::mat4 proj(1.0f);
+    if (!window)
+        return;
 
-    //model = glm::rotate(model, glm::radians(rotation), glm::vec3(1.0f, 0.5f, 0.2f));
-    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -10.0f));
-    proj = glm::perspective(glm::radians(45.0f),
-        (float)width / (float)height,
-        0.1f, 100.f);
+    if (glfwGetKey(window, GLFW_KEY_T) == GLFW_RELEASE && keys[GLFW_KEY_T])
+    {
+        keys[GLFW_KEY_T] = false;
+    }
+    else if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS && !keys[GLFW_KEY_T])
+    {
+        useTexture = !useTexture;
+        keys[GLFW_KEY_T] = true;
+    }
 
-    int modelLoc = glGetUniformLocation(shader, "model");
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+    {
+        scale = fmax(0.1f, scale - 0.01f);
+    }
+    else if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+    {
+        scale = fmin(2.0f, scale + 0.01f);
+    }
 
-    int viewLoc = glGetUniformLocation(shader, "view");
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+    {
+        rotation -= 1.0f;
+    }
+    else if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+    {
+        rotation += 1.0f;
+    }
 
-    int projLoc = glGetUniformLocation(shader, "proj");
-    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
+    camera.CheckInputs(window);
 }
 
 void Renderer::RenderThread(Renderer* r)
@@ -246,7 +254,8 @@ void Renderer::RenderThread(Renderer* r)
     int& shaderColor = renderer.shaderColor;
 
     Model& mdl = renderer.model;
-    Texture& texture = renderer.texture;
+
+    Camera camera(renderer.width, renderer.height, glm::vec3(0.0f, 0.0f, -5.0f));
 
     int shader;
     bool alternate = false;
@@ -274,85 +283,43 @@ void Renderer::RenderThread(Renderer* r)
         double currentTime = glfwGetTime();
         double diff = currentTime - lastTime;
         
-        if (diff >= 1.0f)
+        if (diff >= 0.2f)
         {
+            char stats[64];
+
             double frameTime = (diff * 1000.0) / double(frames);
+            
+            sprintf_s(stats, 64, "Model Viewer %.2f fps - %.2f ms/frame", (double)frames / diff, frameTime);
 
             system("cls");
             printf("%f fps\n", (double)frames / diff);
             printf("%f ms/frame\n", frameTime);
             printf("useTexture %d\n", useTexture);
+            printf("position (%.2f %.2f %.2f)\n", camera.GetPosition().x, camera.GetPosition().y, camera.GetPosition().z);
+
+            glfwSetWindowTitle(window, stats);
             frames = 0;
             lastTime += diff;
         }
 
         frames++;
 
-        if (glfwGetKey(window, GLFW_KEY_T) == GLFW_RELEASE && isTPressed)
-        {
-            isTPressed = false;
-        }
-        else if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS && !isTPressed)
-        {
-            printf("glfwGetKey T\n");
-            useTexture = !useTexture;
-
-            isTPressed = true;
-        }
+        renderer.CheckInputs(camera, useTexture, scale, rotation);
 
         shader = (useTexture) ? shaderTexture : shaderColor;
         ShaderManager::UseProgram(shader);
 
+        camera.ApplyCamMatrix(45, 0.1f, 100.0f, shader, "camMatrix");
+        glUniform1f(glGetUniformLocation(shader, "scale"), scale);
+        glUniform3f(glGetUniformLocation(shader, "lightDir"), camera.GetOrientation().x, camera.GetOrientation().y, camera.GetOrientation().z);
+
         //clear screen
         GLCall(glClearColor(0.07f, 0.13f, 0.17f, 1.0f));
         GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-        
-        renderer.Projection(rotation, shader);
 
-        if (alternate)
-            scale += 0.005f;
-        else
-            scale -= 0.005f;
-
-        if (scale >= 1.f)
-            alternate = false;
-        else if (scale <= 0.05f)
-            alternate = true;
-
-        rotation += 0.5f;
-
-        //glUniform1f(glGetUniformLocation(shader, "scale"), scale);
-
-        mdl.Bind();
-
-        if(useTexture)
-            texture.Bind();
-        else
-        {
-
-            if (colorAlternate)
-                red += 0.015f;
-            else
-                red -= 0.015f;
-
-            if (red >= 1.f)
-                colorAlternate = false;
-            else if (red <= 0.f)
-                colorAlternate = true;
-
-            float r = (float)(rand() % 256) / 255.0f;
-            float g = (float)(rand() % 256) / 255.0f;
-            float b = (float)(rand() % 256) / 255.0f;
-
-            GLCall(glUniform3f(glGetUniformLocation(shader, "color"), 1.0f, 0.0f, 0.0f));
-        }
-
-        glDrawElements(GL_TRIANGLES, mdl.GetElementsCount(), GL_UNSIGNED_INT, 0);
-
-        if (useTexture)
-            texture.UnBind();
-
-        mdl.UnBind();
+        mdl.UpdatePositionRotation(glm::vec3(0.0f, 0.0f, 0.0f), rotation);
+        mdl.SetModelMatrix(shader);
+        mdl.Draw(useTexture);
 
         ShaderManager::UseProgram(0);
 
