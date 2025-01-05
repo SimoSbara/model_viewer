@@ -41,7 +41,7 @@ private:
     bool InitResources();
     bool FreeResources();
 
-    void CheckInputs(Camera& camera, bool& useTexture, float& scale, float& rotation);
+    void CheckInputs(Camera& camera, bool& useTexture, float& scale, float& rX, float& rY);
 
 private:
     static Renderer* renderer;

@@ -6,7 +6,7 @@ in vec2 texCoord;
 out vec4 fragColor;
 
 uniform sampler2D tex0;
-uniform vec3 lightDir;
+uniform vec3 lightPos;
 
 void main()
 {
@@ -14,9 +14,10 @@ void main()
 	vec3 lightColor = vec3(1.0f, 1.0f, 1.0f);
 
 	vec3 norm = normalize(normal);
-	//vec3 lightDir = normalize(lightPos - curPos);
+	vec3 lightDir = normalize(lightPos - curPos);
 
 	float diffuse = max(dot(norm, lightDir), 0.0f);
 
 	fragColor = texture(tex0, texCoord) * vec4(lightColor, 1.0f) * diffuse;
+	//fragColor = texture(tex0, texCoord);
 }

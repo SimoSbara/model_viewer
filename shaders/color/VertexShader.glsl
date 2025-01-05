@@ -19,6 +19,8 @@ void main()
 
 	gl_Position = camMatrix * vec4(curPos, 1.0);
 
-	normal = vNorm;
+	normal = mat3(transpose(inverse(model))) * vNorm;
+
+	//normal = vNorm;
 	color = vColor;
 }

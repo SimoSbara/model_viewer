@@ -24,11 +24,12 @@ public:
 	Model();
 	~Model();
 
+	bool CreateFromData(const VertexData* vertices, uint32_t numVerts, const uint32_t* indices, uint32_t numIndices);
 	bool CreateFromOBJ(const char* filename);
 	bool LoadTexture(const char* filename);
 
 	void UpdatePosition(const glm::vec3 position);
-	void UpdatePositionRotation(const glm::vec3 position, const float angle);
+	void UpdatePositionRotation(const glm::vec3 position, const float angleX, const float angleY);
 
 	inline uint32_t GetElementsCount() const
 	{

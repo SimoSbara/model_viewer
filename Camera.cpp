@@ -7,7 +7,7 @@ Camera::Camera(uint32_t width, uint32_t height, glm::vec3 position)
 	this->height = height;
 	this->position = position;
 	this->up = glm::vec3(0.0f, 1.0f, 0.0f);
-	this->orientation = glm::vec3(0.0f, 0.0f, -1.0f);
+	this->orientation = glm::vec3(0.0f, 0.0f, 1.0f);
 }
 
 void Camera::CheckInputs(GLFWwindow* window)

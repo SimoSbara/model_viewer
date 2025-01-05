@@ -8,14 +8,23 @@
 
 
 //QUADRATO
-//XYZ RGB
+//XYZ RGB UV NORMALS
 //static float positions[] =
 //{
-//    -0.5f,  0.5f, 0.5f, 0.f, 1.f, 0.f, //0
-//    -0.5f, -0.5f, 0.5f, 1.f, 0.f, 0.f, //1
-//     0.5f, -0.5f, 0.5f, 0.f, 0.f, 1.f, //2
-//     0.5f,  0.5f, 0.5f, 1.f, 1.f, 0.f  //3
+//    -0.5f,  0.5f, 0.5f, 0.f, 1.f, 0.f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, //0
+//    -0.5f, -0.5f, 0.5f, 1.f, 0.f, 0.f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, //1
+//     0.5f, -0.5f, 0.5f, 0.f, 0.f, 1.f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, //2
+//     0.5f,  0.5f, 0.5f, 1.f, 1.f, 0.f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f  //3
 //};
+
+static float positions[] =
+{
+    -1.0f,  0.0f, 1.0f, 0.f, 1.f, 0.f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, //0
+     1.0f,  0.0f, 1.0f, 1.f, 0.f, 0.f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, //1
+    -1.0f,  0.0f, -1.0f, 0.f, 0.f, 1.f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, //2
+     1.0f,  0.0f, -1.0f, 1.f, 1.f, 0.f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f  //3
+};
+
 
 
 // 0--------3
@@ -29,20 +38,26 @@
 //    1, 2, 3
 //};
 
+static uint32_t indeces[] =
+{
+    1, 2, 0,
+    1, 3, 2
+};
+
 //CUBO
 //XYZ RGB UV 8 vertici
-static float vertices[] =
-{
-     0.5f,  0.0f, 0.0f, 0.f, 1.f, 0.f, 1.0f, 0.0f, //0
-     0.0f,  0.0f, 0.0f, 1.f, 0.f, 0.f, 0.0f, 0.0f, //1
-     0.0f,  0.0f, 0.5f, 0.f, 0.f, 1.f, 0.0f, 1.0f, //2
-     0.5f,  0.0f, 0.5f, 1.f, 1.f, 0.f, 1.0f, 1.0f, //3
-
-     0.5f,  0.5f, 0.0f, 0.f, 1.f, 0.f, 1.0f, 1.0f, //4
-     0.0f,  0.5f, 0.0f, 1.f, 0.f, 0.f, 0.0f, 1.0f, //5
-     0.0f,  0.5f, 0.5f, 0.f, 0.f, 1.f, 0.0f, 1.0f, //6
-     0.5f,  0.5f, 0.5f, 1.f, 1.f, 0.f, 1.0f, 1.0f  //7
-};
+//static float vertices[] =
+//{
+//     0.5f,  0.0f, 0.0f, 0.f, 1.f, 0.f, 1.0f, 0.0f, //0
+//     0.0f,  0.0f, 0.0f, 1.f, 0.f, 0.f, 0.0f, 0.0f, //1
+//     0.0f,  0.0f, 0.5f, 0.f, 0.f, 1.f, 0.0f, 1.0f, //2
+//     0.5f,  0.0f, 0.5f, 1.f, 1.f, 0.f, 1.0f, 1.0f, //3
+//
+//     0.5f,  0.5f, 0.0f, 0.f, 1.f, 0.f, 1.0f, 1.0f, //4
+//     0.0f,  0.5f, 0.0f, 1.f, 0.f, 0.f, 0.0f, 1.0f, //5
+//     0.0f,  0.5f, 0.5f, 0.f, 0.f, 1.f, 0.0f, 1.0f, //6
+//     0.5f,  0.5f, 0.5f, 1.f, 1.f, 0.f, 1.0f, 1.0f  //7
+//};
 
 
 // 0--------3
@@ -50,27 +65,27 @@ static float vertices[] =
 // |        |
 // 1--------2
 
-static uint32_t indeces[] =
-{
-    //BOTTOM
-    0, 3, 2,
-    0, 2, 1,
-    //NORD
-    2, 3, 7,
-    2, 7, 6,
-    //OVEST
-    1, 2, 6,
-    1, 6, 5,
-    //EST
-    0, 3, 7,
-    0, 7, 4,
-    //SUD
-    1, 0, 4,
-    1, 4, 5,
-    //TOP
-    5, 4, 6,
-    4, 7, 6
-};
+//static uint32_t indeces[] =
+//{
+//    //BOTTOM
+//    0, 3, 2,
+//    0, 2, 1,
+//    //NORD
+//    2, 3, 7,
+//    2, 7, 6,
+//    //OVEST
+//    1, 2, 6,
+//    1, 6, 5,
+//    //EST
+//    0, 3, 7,
+//    0, 7, 4,
+//    //SUD
+//    1, 0, 4,
+//    1, 4, 5,
+//    //TOP
+//    5, 4, 6,
+//    4, 7, 6
+//};
 
 Renderer* Renderer::renderer = nullptr;
 
@@ -184,7 +199,9 @@ bool Renderer::InitResources()
     ShaderManager::UseProgram(0);
 
     //carico assets
-    model.CreateFromOBJ("models/perno_samp3.obj");
+    
+    model.CreateFromOBJ("models/test_samp.obj");
+    //model.CreateFromData((VertexData*)positions, 4, indeces, 6);
     model.LoadTexture("samp.png");
 
     return true;
@@ -200,7 +217,7 @@ bool Renderer::FreeResources()
     return true;
 }
 
-void Renderer::CheckInputs(Camera& camera, bool& useTexture, float& scale, float& rotation)
+void Renderer::CheckInputs(Camera& camera, bool& useTexture, float& scale, float& rX, float& rY)
 {
     if (!window)
         return;
@@ -217,20 +234,22 @@ void Renderer::CheckInputs(Camera& camera, bool& useTexture, float& scale, float
 
     if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
     {
-        scale = fmax(0.1f, scale - 0.01f);
+        //scale = fmax(0.1f, scale - 0.01f);
+        rX -= 1.0f;
     }
     else if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
     {
-        scale = fmin(2.0f, scale + 0.01f);
+        //scale = fmin(2.0f, scale + 0.01f);
+        rX += 1.0f;
     }
 
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
     {
-        rotation -= 1.0f;
+        rY -= 1.0f;
     }
     else if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
     {
-        rotation += 1.0f;
+        rY += 1.0f;
     }
 
     camera.CheckInputs(window);
@@ -261,7 +280,8 @@ void Renderer::RenderThread(Renderer* r)
     bool alternate = false;
     bool colorAlternate = false;
     float scale = 1.0f;
-    float rotation = 0.0f;
+    float rX = 0.0f;
+    float rY = 0.0f;
     float red = 0.0f;
     bool useTexture = true;
 
@@ -304,20 +324,21 @@ void Renderer::RenderThread(Renderer* r)
 
         frames++;
 
-        renderer.CheckInputs(camera, useTexture, scale, rotation);
+        renderer.CheckInputs(camera, useTexture, scale, rX, rY);
 
         shader = (useTexture) ? shaderTexture : shaderColor;
         ShaderManager::UseProgram(shader);
 
         camera.ApplyCamMatrix(45, 0.1f, 100.0f, shader, "camMatrix");
         glUniform1f(glGetUniformLocation(shader, "scale"), scale);
-        glUniform3f(glGetUniformLocation(shader, "lightDir"), camera.GetOrientation().x, camera.GetOrientation().y, camera.GetOrientation().z);
+        glUniform3f(glGetUniformLocation(shader, "lightPos"), camera.GetPosition().x, camera.GetPosition().y, camera.GetPosition().z);
+        //glUniform3f(glGetUniformLocation(shader, "lightDir"), camera.GetOrientation().x, camera.GetOrientation().y, camera.GetOrientation().z);
 
         //clear screen
         GLCall(glClearColor(0.07f, 0.13f, 0.17f, 1.0f));
         GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-        mdl.UpdatePositionRotation(glm::vec3(0.0f, 0.0f, 0.0f), rotation);
+        mdl.UpdatePositionRotation(glm::vec3(0.0f, 0.0f, 0.0f), rX, rY);
         mdl.SetModelMatrix(shader);
         mdl.Draw(useTexture);
 

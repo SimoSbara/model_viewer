@@ -6,6 +6,8 @@
 
 #include <fstream>
 #include <vector>
+#include <map>
+#include <tuple>
 
 Model::Model()
 {
@@ -17,10 +19,33 @@ Model::~Model()
     Delete();
 }
 
+bool Model::CreateFromData(const VertexData* vertices, uint32_t numVerts, const uint32_t* indices, uint32_t numIndices)
+{
+    vao.reset(new VAO);
+    vbo.reset(new VertexBuffer(vertices, numVerts * sizeof(VertexData)));
+    ebo.reset(new IndexBuffer(indices, numIndices * sizeof(uint32_t)));
+
+    vao->LinkVertexBuffer(*vbo, 0, GL_FLOAT, 3, 11 * sizeof(float), 0); //pos
+    vao->LinkVertexBuffer(*vbo, 1, GL_FLOAT, 3, 11 * sizeof(float), 3 * sizeof(float)); //pos
+    vao->LinkVertexBuffer(*vbo, 2, GL_FLOAT, 2, 11 * sizeof(float), 6 * sizeof(float)); //uv
+    //vao->LinkVertexBuffer(*vbo, 3, GL_FLOAT, 3, 11 * sizeof(float), 8 * sizeof(float)); //normals
+
+    vao->UnBind();
+    vbo->UnBind();
+    ebo->UnBind();
+
+    return true;
+}
+
 bool Model::CreateFromOBJ(const char* filename)
 {
     std::vector<VertexData> vertices;
     std::vector<uint32_t> indices;
+
+    std::map<int, std::vector<std::tuple<int, int, int>>> indicesMap;
+
+    //normal, texture, index
+    std::tuple<int, int, int> tuple;
 
     fastObjMesh* mesh = fast_obj_read(filename);
 
@@ -73,20 +98,68 @@ bool Model::CreateFromOBJ(const char* filename)
         for (int j = 0; j < 3; j++, index++)
         {
             uint32_t p = index->p - 1;
-            uint32_t& n = index->n;
-            uint32_t t = index->t - 1;
+            uint32_t n = index->n * 3;
+            uint32_t t = index->t * 2;
+            uint32_t index = 0;
 
-            VertexData& vertex = vertices[p];
+            tuple = { p, n ,t };
 
-            indices[i + j] = p;
+            auto pos = indicesMap.find(p);
 
-            if (mesh->texcoord_count > 2)
+            //vbo optimizations
+            if (pos != indicesMap.end())
+            {
+                bool found = false;
+
+                for (int i = 0; i < pos->second.size(); i++)
+                {
+                    tuple = pos->second[i];
+
+                    if (std::get<0>(tuple) == n && std::get<1>(tuple) == t)
+                    {
+                        index = std::get<2>(tuple);
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    vertices.push_back(
+                        {
+                            vertices[p].x, vertices[p].y, vertices[p].z,
+                            vertices[p].r, vertices[p].g, vertices[p].b
+                        }
+                    );
+
+                    index = vertices.size() - 1;
+
+                    
+
+                    pos->second.push_back(tuple);
+                }
+            }
+            else
+            {
+                index = p;
+
+                tuple = { n, t, index };
+
+                indicesMap[index] = std::vector<std::tuple<int, int, int>>(1);
+                indicesMap[index].push_back(tuple);
+            }
+
+            VertexData& vertex = vertices[index];
+
+            indices[i + j] = index;
+
+            if (mesh->texcoord_count > 1)
             {
                 vertex.u = mesh->texcoords[t];
                 vertex.v = mesh->texcoords[t + 1];
             }
 
-            if (mesh->normal_count > 3)
+            if (mesh->normal_count > 1)
             {
                 vertex.nx = mesh->normals[n];
                 vertex.ny = mesh->normals[n + 1];
@@ -127,10 +200,11 @@ void Model::UpdatePosition(const glm::vec3 position)
 }
 
 //solo asse Y per ora
-void Model::UpdatePositionRotation(const glm::vec3 position, const float angle)
+void Model::UpdatePositionRotation(const glm::vec3 position, const float angleX, const float angleY)
 {
     UpdatePosition(position);
-    this->model = glm::rotate(model, glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
+    this->model = glm::rotate(model, glm::radians(angleX), glm::vec3(1.0f, 0.0f, 0.0f));
+    this->model = glm::rotate(model, glm::radians(angleY), glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
 void Model::SetModelMatrix(const int& shader) const
