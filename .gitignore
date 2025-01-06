@@ -2,3 +2,5 @@
 ModelViewer/x64/*
 x64/*
 models/*
+out/*
+bin/*
