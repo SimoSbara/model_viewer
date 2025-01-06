@@ -100,71 +100,75 @@ bool Model::CreateFromOBJ(const char* filename)
             uint32_t p = index->p - 1;
             uint32_t n = index->n * 3;
             uint32_t t = index->t * 2;
-            uint32_t index = 0;
 
-            tuple = { p, n ,t };
-
-            auto pos = indicesMap.find(p);
-
-            //vbo optimizations
-            if (pos != indicesMap.end())
+            if (mesh->texcoord_count > 1 && mesh->normal_count > 1)
             {
-                bool found = false;
+                uint32_t index = 0;
 
-                for (int i = 0; i < pos->second.size(); i++)
+                auto pos = indicesMap.find(p);
+
+                //vbo optimizations
+                if (pos != indicesMap.end())
                 {
-                    tuple = pos->second[i];
+                    bool found = false;
 
-                    if (std::get<0>(tuple) == n && std::get<1>(tuple) == t)
+                    for (int i = 0; i < pos->second.size(); i++)
                     {
-                        index = std::get<2>(tuple);
-                        found = true;
-                        break;
+                        tuple = pos->second[i];
+
+                        if (std::get<0>(tuple) == n && std::get<1>(tuple) == t)
+                        {
+                            index = std::get<2>(tuple);
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found)
+                    {
+                        vertices.push_back(
+                            {
+                                vertices[p].x, vertices[p].y, vertices[p].z,
+                                vertices[p].r, vertices[p].g, vertices[p].b
+                            }
+                        );
+
+                        index = vertices.size() - 1;
+
+
+
+                        pos->second.push_back(tuple);
                     }
                 }
-
-                if (!found)
+                else
                 {
-                    vertices.push_back(
-                        {
-                            vertices[p].x, vertices[p].y, vertices[p].z,
-                            vertices[p].r, vertices[p].g, vertices[p].b
-                        }
-                    );
+                    index = p;
 
-                    index = vertices.size() - 1;
+                    tuple = { n, t, index };
 
-                    
+                    indicesMap[index] = std::vector<std::tuple<int, int, int>>(1);
+                    indicesMap[index].push_back(tuple);
+                }
 
-                    pos->second.push_back(tuple);
+                VertexData& vertex = vertices[index];
+
+                indices[i + j] = index;
+
+                if (mesh->texcoord_count > 1)
+                {
+                    vertex.u = mesh->texcoords[t];
+                    vertex.v = mesh->texcoords[t + 1];
+                }
+
+                if (mesh->normal_count > 1)
+                {
+                    vertex.nx = mesh->normals[n];
+                    vertex.ny = mesh->normals[n + 1];
+                    vertex.nz = mesh->normals[n + 2];
                 }
             }
             else
-            {
-                index = p;
-
-                tuple = { n, t, index };
-
-                indicesMap[index] = std::vector<std::tuple<int, int, int>>(1);
-                indicesMap[index].push_back(tuple);
-            }
-
-            VertexData& vertex = vertices[index];
-
-            indices[i + j] = index;
-
-            if (mesh->texcoord_count > 1)
-            {
-                vertex.u = mesh->texcoords[t];
-                vertex.v = mesh->texcoords[t + 1];
-            }
-
-            if (mesh->normal_count > 1)
-            {
-                vertex.nx = mesh->normals[n];
-                vertex.ny = mesh->normals[n + 1];
-                vertex.nz = mesh->normals[n + 2];
-            }
+                indices[i + j] = p;
         }
     }
 
