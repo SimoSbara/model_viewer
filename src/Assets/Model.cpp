@@ -240,4 +240,5 @@ void Model::Delete()
     vao.reset();
     vbo.reset();
     ebo.reset();
+    texture.reset();
 }

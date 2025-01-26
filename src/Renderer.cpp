@@ -141,6 +141,7 @@ bool Renderer::InitOpenGL()
 
 bool Renderer::FreeOpenGL()
 {
+    glfwDestroyWindow(window);
     glfwTerminate();
 
     return true;
@@ -315,6 +316,7 @@ bool Renderer::Run()
     }
 
     FreeResources();
+    FreeOpenGL();
 
     return true;
 }
