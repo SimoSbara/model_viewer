@@ -304,7 +304,7 @@ void* file_open(const char* path, void* user_data)
 
     FILE* file = 0;
 
-    fopen_s(&file, path, "rb");
+    file = fopen(path, "rb");
 
     return file;
 }

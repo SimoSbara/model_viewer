@@ -17,17 +17,9 @@ public:
 
     void SetWindowDimensions(uint16_t width, uint16_t height);
 
-    void Start();
-    void Stop();
-
-    inline bool IsRunning() const
-    {
-        return this->isRunning;
-    }
+    bool Run();
 
 private:
-    static void RenderThread(Renderer* r);
-
     bool InitOpenGL();
     bool FreeOpenGL();
     bool InitResources();
@@ -37,9 +29,6 @@ private:
 
 private:
     uint16_t width, height;
-    bool isRunning;
-
-    std::thread renderThread;
 
     //risorse opengl
     GLFWwindow* window;

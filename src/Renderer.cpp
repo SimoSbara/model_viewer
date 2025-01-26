@@ -2,6 +2,8 @@
 #include "OGLUtils.hpp"
 #include "Managers/ShaderManager.h"
 
+#include <sstream>
+#include <iomanip> 
 
 //QUADRATO
 //XYZ RGB UV NORMALS
@@ -88,34 +90,17 @@ Renderer::Renderer()
     this->width = 1000;
     this->height = 800;
     this->window = nullptr;
-    this->isRunning = false;
 }
 
 Renderer::~Renderer()
 {
-    Stop();
+
 }
 
 void Renderer::SetWindowDimensions(uint16_t width, uint16_t height)
 {
-    if (IsRunning())
-        return;
-
     this->width = width;
     this->height = height;
-}
-
-void Renderer::Start()
-{
-    renderThread = std::thread(RenderThread, this);
-    isRunning = true;
-}
-
-void Renderer::Stop()
-{
-    isRunning = false;
-
-    renderThread.join();
 }
 
 bool Renderer::InitOpenGL()
@@ -123,14 +108,17 @@ bool Renderer::InitOpenGL()
     if (!glfwInit())
         return false;
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#ifdef __APPLE__
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); //uncomment this statement to fix compilation on OS X
+#endif
 
     window = glfwCreateWindow(width, height, "Model Viewer", NULL, NULL);
     if (!window)
     {
-        std::cout << "Error GLFW";
+        std::cout << "Error GLFW" << std::endl;
         glfwTerminate();
         return false;
     }
@@ -138,15 +126,28 @@ bool Renderer::InitOpenGL()
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); //vsync
 
+#ifndef __APPLE__
     if (glewInit() != GLEW_OK)
     {
         std::cout << "Error GLEW";
         return false;
     }
+#else
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	//if (gladLoadGL())
+	{
+		std::cout << "Failed to initialize GLAD" << std::endl;
+		return false;
+	}
+
+    printf("OpenGL version: %s\n", glGetString(GL_VERSION));
+#endif
 
     std::cout << glGetString(GL_VERSION) << std::endl;
 
     glViewport(0, 0, width, height);
+
+    GLCall(glEnable(GL_DEPTH_TEST));
 
     return true;
 }
@@ -198,8 +199,7 @@ bool Renderer::InitResources()
     ShaderManager::UseProgram(0);
 
     //carico assets
-    
-    model.CreateFromOBJ("models/test_samp.obj");
+    model.CreateFromOBJ("models/alfa147.obj");
     model.LoadTexture("models/samp.png");
 
     return true;
@@ -253,30 +253,15 @@ void Renderer::CheckInputs(Camera& camera, bool& useTexture, float& scale, float
     camera.CheckInputs(window);
 }
 
-void Renderer::RenderThread(Renderer* r)
+bool Renderer::Run()
 {
-    if (!r)
-    {
-        std::cout << "Render* context is null!" << std::endl;
-        return;
-    }
-
-    Renderer& renderer = *r;
-
-    if (!renderer.InitOpenGL() || !renderer.InitResources())
+    if (!InitOpenGL() || !InitResources())
     {
         std::cout << "Failed to initialize!" << std::endl;
-        renderer.isRunning = false;
-        return;
+        return false;
     }
 
-    GLFWwindow* window = renderer.window;
-    int& shaderTexture = renderer.shaderTexture;
-    int& shaderColor = renderer.shaderColor;
-
-    Model& mdl = renderer.model;
-
-    Camera camera(renderer.width, renderer.height, glm::vec3(0.0f, 0.0f, -5.0f));
+    Camera camera(width, height, glm::vec3(0.0f, 0.0f, -5.0f));
 
     int shader;
     bool alternate = false;
@@ -291,42 +276,33 @@ void Renderer::RenderThread(Renderer* r)
 
     double lastTime = glfwGetTime();
     int frames = 0;
-    
-    if (!window)
-    {
-        renderer.isRunning = false;
-        return;
-    }
 
     GLCall(glEnable(GL_DEPTH_TEST));
 
-    while (renderer.isRunning && !glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(window))
     {
         double currentTime = glfwGetTime();
         double diff = currentTime - lastTime;
         
         if (diff >= 0.2f)
         {
-            char stats[64];
+            std::ostringstream stats;
 
             double frameTime = (diff * 1000.0) / double(frames);
-            
-            sprintf_s(stats, 64, "Model Viewer %.2f fps - %.2f ms/frame", (double)frames / diff, frameTime);
+            double fps = (double)frames / diff;
 
-            system("cls");
-            printf("%f fps\n", (double)frames / diff);
-            printf("%f ms/frame\n", frameTime);
-            printf("useTexture %d\n", useTexture);
-            printf("position (%.2f %.2f %.2f)\n", camera.GetPosition().x, camera.GetPosition().y, camera.GetPosition().z);
+            stats << "Model Viewer ";
+            stats << std::fixed << std::setprecision(2) << fps << " fps - ";
+            stats << std::fixed << std::setprecision(2) << frameTime << " ms/frame";
 
-            glfwSetWindowTitle(window, stats);
+            glfwSetWindowTitle(window, stats.str().c_str());
             frames = 0;
             lastTime += diff;
         }
 
         frames++;
 
-        renderer.CheckInputs(camera, useTexture, scale, rX, rY);
+        CheckInputs(camera, useTexture, scale, rX, rY);
 
         shader = (useTexture) ? shaderTexture : shaderColor;
         ShaderManager::UseProgram(shader);
@@ -340,9 +316,9 @@ void Renderer::RenderThread(Renderer* r)
         GLCall(glClearColor(0.07f, 0.13f, 0.17f, 1.0f));
         GLCall(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-        mdl.UpdatePositionRotation(glm::vec3(0.0f, 0.0f, 0.0f), rX, rY);
-        mdl.SetModelMatrix(shader);
-        mdl.Draw(useTexture);
+        model.UpdatePositionRotation(glm::vec3(0.0f, 0.0f, 0.0f), rX, rY);
+        model.SetModelMatrix(shader);
+        model.Draw(useTexture);
 
         ShaderManager::UseProgram(0);
 
@@ -351,8 +327,7 @@ void Renderer::RenderThread(Renderer* r)
         glfwPollEvents();
     }
 
-    renderer.FreeResources();
-    renderer.FreeOpenGL();
+    FreeResources();
 
-    renderer.isRunning = false;
+    return true;
 }

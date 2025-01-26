@@ -3,16 +3,25 @@
 #include <iostream>
 
 #define GLM_ENABLE_EXPERIMENTAL
-#define GLEW_STATIC
+#define GL_SILENCE_DEPRECATION
+#define GLFW_INCLUDE_NONE
 
-#include <GL/glew.h>
+#include <glad/glad.h>
+
 #include <GLFW/glfw3.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#ifdef WIN32
 #define ASSERT(x) if(!(x)) __debugbreak();
+#else
+#include <signal.h>
+#define ASSERT(x) if(!(x)) raise(SIGTRAP);
+#endif
+
 #define GLCall(x) GLClearError();\
     x;\
     ASSERT(GLLogCall(#x, __FILE__, __LINE__));

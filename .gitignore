@@ -4,3 +4,5 @@ x64/*
 models/*
 out/*
 bin/*
+/build
+/.vscode
