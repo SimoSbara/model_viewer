@@ -126,28 +126,15 @@ bool Renderer::InitOpenGL()
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); //vsync
 
-#ifndef __APPLE__
-    if (glewInit() != GLEW_OK)
-    {
-        std::cout << "Error GLEW";
-        return false;
-    }
-#else
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-	//if (gladLoadGL())
 	{
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return false;
 	}
 
-    printf("OpenGL version: %s\n", glGetString(GL_VERSION));
-#endif
-
     std::cout << glGetString(GL_VERSION) << std::endl;
 
     glViewport(0, 0, width, height);
-
-    GLCall(glEnable(GL_DEPTH_TEST));
 
     return true;
 }
